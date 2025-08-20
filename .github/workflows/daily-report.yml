@@ -3,7 +3,7 @@ name: Daily Taiwan Stocks Report
 on:
   schedule:
     # 每天 01:05 UTC 執行 = 台北時間 09:05
-    - cron: "01 8 * * *"
+    - cron: "53 9 * * *"
   workflow_dispatch: {}
 
 jobs:
