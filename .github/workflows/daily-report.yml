@@ -1,0 +1,48 @@
+name: Daily Taiwan Stocks Report
+
+on:
+  schedule:
+    # 每天 01:05 UTC 執行 = 台北時間 09:05
+    - cron: "5 1 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  build-and-send:
+    runs-on: ubuntu-latest
+    env:
+      TZ: Asia/Taipei
+
+      # 寫信腳本讀的環境變數（請在 repo Settings → Secrets and variables → Actions 設定）
+      SMTP_HOST: ${{ secrets.SMTP_HOST }}
+      SMTP_PORT: ${{ secrets.SMTP_PORT }}
+      SMTP_USER: ${{ secrets.SMTP_USER }}
+      SMTP_PASS: ${{ secrets.SMTP_PASS }}
+      EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+      EMAIL_TO: ${{ secrets.EMAIL_TO }}
+      EMAIL_SUBJECT: "Daily Taiwan Stocks Report"
+      EMAIL_BODY: "附上今日自動產生的台股技術指標報告。"
+      EMAIL_ATTACHMENT: "ETF100_report.xlsx"
+      SMTP_STARTTLS: "true" # 如用 465/SSL 可設為 "false"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Generate report
+        run: |
+          python report.py
+          ls -lh ETF100_report.xlsx || (echo "Report missing"; exit 1)
+
+      - name: Send email with attachment
+        run: |
+          python mail_report.py
